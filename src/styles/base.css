@@ -1,0 +1,78 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--soft);
+  color: var(--ink);
+  font-family: var(--f);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+p {
+  margin: 0;
+}
+a {
+  color: var(--g7);
+  font-weight: 600;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid var(--g6);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.mu {
+  color: var(--ink3);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.rq {
+  color: var(--red);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
