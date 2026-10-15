@@ -186,3 +186,50 @@ export interface OrderAnalytics {
 export interface VerifyResult {
   order: Order;
 }
+
+// ---------------------------------------------------------------- wallet (group 6 of the design)
+
+/** in = money in; hold = paid by the customer but the order is not finished; outp = withdrawal processing; outd = transferred; fail = not successful. */
+export type WalletTxnStatus = 'in' | 'hold' | 'outp' | 'outd' | 'fail';
+
+export interface WalletTxn {
+  id: string;
+  /** ISO-8601 with +07:00. */
+  at: string;
+  kind: 'in' | 'out';
+  title: string;
+  /** Order id (`EB001244`) for money in, withdrawal code (`RT250014`) for money out. */
+  code: string;
+  /** Always positive; `kind` gives the direction. For a withdrawal this is the amount taken out of the wallet, before the platform fee. */
+  amount: number;
+  status: WalletTxnStatus;
+}
+
+export interface WalletSummary {
+  available: number;
+  /** Paid by customers, orders not finished yet. */
+  holding: number;
+  /** The linked bank account, or null while it is not complete (withdrawing is blocked). */
+  bank: BankAccount | null;
+  lastWithdrawal: { code: string; status: WalletTxnStatus } | null;
+  /** Totals of the reporting period shown on the history screen. */
+  period: { from: string; to: string; moneyIn: number; moneyOut: number; withdrawals: number; fee: number };
+}
+
+export type WithdrawalStatus = 'awaiting_otp' | 'processing' | 'done' | 'failed';
+
+export interface Withdrawal {
+  code: string;
+  /** Taken out of the wallet. */
+  amount: number;
+  fee: number;
+  /** What the bank receives (`amount - fee`). */
+  net: number;
+  status: WithdrawalStatus;
+  createdAt: string;
+  verifiedAt: string | null;
+  /** Wallet balance just before this withdrawal. */
+  balanceBefore: number;
+  /** Snapshot of the destination at creation time. */
+  bank: BankAccount;
+}

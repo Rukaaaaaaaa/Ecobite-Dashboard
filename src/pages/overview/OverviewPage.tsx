@@ -14,6 +14,7 @@ import { services } from '@/services';
 import type { StatsRange } from '@/types';
 import { durationLabel, expiringBags } from '@/utils/bags';
 import { longDate, million, vnd } from '@/utils/format';
+import { maskAccount, netOf, PLATFORM_FEE_LABEL } from '@/utils/wallet';
 
 const RANGES: { value: StatsRange; label: string }[] = [
   { value: 'today', label: 'Hôm nay' },
@@ -29,6 +30,7 @@ export default function OverviewPage() {
   const orders = useAsync(() => services.orders.list({ page: 1, pageSize: 5 }), []);
   const bags = useAsync(() => services.bags.list(), []);
   const profile = useAsync(() => services.profile.get(), []);
+  const wallet = useAsync(() => services.wallet.summary(), []);
 
   const expiring = bags.data ? expiringBags(bags.data) : [];
   const s = stats.data;
@@ -104,6 +106,28 @@ export default function OverviewPage() {
               <LinkButton block to="/products/new"><Icon name="plus" size={16} />Tạo sản phẩm</LinkButton>
               <LinkButton block variant="ghost" to="/orders"><Icon name="doc" size={16} />Xem đơn hàng</LinkButton>
             </div>
+          </Card>
+
+          <Card title="Ví của quán" icon="wallet" action={<Link to="/wallet" style={{ fontSize: 11.5 }}>Mở ví</Link>}>
+            {wallet.error ? (
+              <ErrorState message={wallet.error} onRetry={wallet.reload} />
+            ) : !wallet.data ? (
+              <Loading />
+            ) : (
+              <>
+                <span className="mu">Số dư khả dụng</span>
+                <b className="num" style={{ display: 'block', fontSize: 24, color: 'var(--g9)', lineHeight: 1.2, marginTop: 2 }}>{vnd(wallet.data.available)}</b>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, margin: '7px 0 12px', fontSize: 11.5, color: 'var(--amb)', fontWeight: 600 }}>
+                  <Icon name="clock" size={13} />{vnd(wallet.data.holding)} chờ đơn kết thúc
+                </div>
+                <LinkButton block to="/wallet/withdraw"><Icon name="out" size={16} />Rút tiền</LinkButton>
+                <p className="mu" style={{ margin: '9px 0 0', fontSize: 11.5 }}>
+                  {wallet.data.bank
+                    ? `Rút bị trừ ${PLATFORM_FEE_LABEL} chiết khấu. Rút hết thì ${wallet.data.bank.bankName} ${maskAccount(wallet.data.bank.accountNumber)} nhận ${vnd(netOf(wallet.data.available))}.`
+                    : `Rút bị trừ ${PLATFORM_FEE_LABEL} chiết khấu. Cần khai tài khoản ngân hàng trước khi rút.`}
+                </p>
+              </>
+            )}
           </Card>
 
           <Card title="Sản phẩm sắp hết giờ bán" action={<Link to="/products/expiring" style={{ fontSize: 11.5 }}>Xem tất cả</Link>}>

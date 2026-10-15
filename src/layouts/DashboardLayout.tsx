@@ -9,6 +9,7 @@ const NAV: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/', label: 'Tổng quan', icon: 'home', end: true },
   { to: '/orders', label: 'Đơn hàng', icon: 'doc' },
   { to: '/products', label: 'Sản phẩm', icon: 'bag' },
+  { to: '/wallet', label: 'Ví', icon: 'wallet' },
   { to: '/profile', label: 'Hồ sơ nhà hàng', icon: 'shop' },
   { to: '/settings', label: 'Cài đặt', icon: 'gear' },
 ];

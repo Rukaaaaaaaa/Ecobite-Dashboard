@@ -4,6 +4,7 @@ import { demoOrders } from './demo/orders';
 import { demoProfile } from './demo/profile';
 import { DEMO_CODE, DEMO_PASSWORD, DEMO_PHONE } from './demo/fixtures';
 import { demoStats } from './demo/stats';
+import { demoWallet } from './demo/wallet';
 import type { Services } from './types';
 
 /**
@@ -20,6 +21,7 @@ export const services: Services = {
   bags: demoBags,
   profile: demoProfile,
   stats: demoStats,
+  wallet: demoWallet,
 };
 
 export { ApiError } from './types';

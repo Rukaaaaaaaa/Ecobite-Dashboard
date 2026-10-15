@@ -31,3 +31,9 @@ export const OVERVIEW_NAV = [
   { to: '/analytics/revenue', label: 'Phân tích doanh thu' },
   { to: '/analytics/orders', label: 'Phân tích đơn hàng' },
 ];
+
+export const WALLET_NAV = [
+  { to: '/wallet', label: 'Ví của quán' },
+  { to: '/wallet/history', label: 'Lịch sử giao dịch' },
+  { to: '/wallet/withdraw', label: 'Rút tiền' },
+];

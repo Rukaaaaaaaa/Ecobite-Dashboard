@@ -2,8 +2,9 @@
  * DEMO DATA. Not business data: invented for the visual prototype, shaped like the reference design.
  * Everything here is only reachable through `services/demo/*`; the UI never imports this file.
  */
-import type { Bag, Order, OrderAnalytics, OrderStatus, OverviewStats, RestaurantProfile, RevenueAnalytics, StatsRange } from '@/types';
+import type { Bag, BankAccount, Order, OrderAnalytics, OrderStatus, OverviewStats, RestaurantProfile, RevenueAnalytics, StatsRange, WalletSummary, WalletTxn, WalletTxnStatus, Withdrawal } from '@/types';
 import { businessDate } from '@/utils/format';
+import { feeOf } from '@/utils/wallet';
 
 export const DEMO_PASSWORD = 'EcoBite123';
 export const DEMO_PHONE = '0912345678';
@@ -79,8 +80,9 @@ export const seedProfile = (): RestaurantProfile => ({
   lat: 21.0462,
   lng: 105.7338,
   openingHours: [OPEN('07:00', '21:30'), OPEN('07:00', '21:30'), OPEN('07:00', '21:30'), OPEN('07:00', '21:30'), OPEN('07:00', '22:00'), OPEN('08:00', '22:00'), { open: false, start: '', end: '' }],
-  // Account number and holder are intentionally missing: it shows the "hồ sơ chưa đủ" flow.
-  bank: { bankName: 'Vietcombank', accountNumber: '', accountHolder: '' },
+  // Sample account (not a real one) so the wallet can be tried end to end. The "hồ sơ chưa đủ" and
+  // "chưa thể rút tiền" flows are tried with a newly registered account, whose profile starts blank.
+  bank: { bankName: 'Vietcombank', accountNumber: '1900004417', accountHolder: 'NGUYEN VAN AN' },
 });
 
 export const blankProfile = (phone: string): RestaurantProfile => ({
@@ -209,5 +211,56 @@ export const orderAnalyticsFixture = (range: OrderAnalytics['range']): OrderAnal
     outcome: [{ status: 'done', pct: 91 }, { status: 'cancel', pct: 6 }, { status: 'miss', pct: 3 }],
     byWeekday: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((label, i) => ({ label, value: Math.round([41, 44, 38, 49, 58, 67, 52][i] * k) })),
     failReasons: [{ label: 'Khách huỷ trước giờ nhận', value: 54 }, { label: 'Khách không tới lấy', value: 38 }, { label: 'Quán hết suất trước khi khách tới', value: 22 }, { label: 'Lý do khác', value: 13 }],
+  };
+};
+
+// ---------------------------------------------------------------- wallet
+
+export interface WalletSeed {
+  available: number;
+  holding: number;
+  txns: WalletTxn[];
+  withdrawals: Withdrawal[];
+  period: WalletSummary['period'];
+}
+
+export const blankWallet = (): WalletSeed => ({
+  available: 0,
+  holding: 0,
+  txns: [],
+  withdrawals: [],
+  period: { from: '01/10', to: '14/10', moneyIn: 0, moneyOut: 0, withdrawals: 0, fee: 0 },
+});
+
+/** Same sample numbers as the design (group 6). They are fixed demo data, not derived from the sample orders. */
+export const seedWallet = (bank: BankAccount): WalletSeed => {
+  const at = (day: string, time: string) => `2026-10-${day}T${time}:00.000+07:00`;
+  const out = (id: string, day: string, time: string, code: string, amount: number, status: WalletTxnStatus): WalletTxn => ({
+    id, at: at(day, time), kind: 'out', title: 'Rút về Vietcombank •••• 4417', code, amount, status,
+  });
+  const inn = (id: string, day: string, time: string, code: string, title: string, amount: number, status: WalletTxnStatus): WalletTxn => ({
+    id, at: at(day, time), kind: 'in', title: `Đơn #${code} · ${title}`, code, amount, status,
+  });
+  const wd = (code: string, day: string, time: string, amount: number, status: Withdrawal['status'], balanceBefore: number): Withdrawal => ({
+    code, amount, fee: feeOf(amount), net: amount - feeOf(amount), status, createdAt: at(day, time), verifiedAt: at(day, time), balanceBefore, bank,
+  });
+  return {
+    available: 8_420_000,
+    holding: 2_130_000,
+    txns: [
+      out('wt_1', '14', '09:12', 'RT250014', 3_000_000, 'outp'),
+      inn('wt_2', '13', '21:40', 'EB001244', 'Túi bất ngờ cuối ngày', 98_000, 'in'),
+      inn('wt_3', '13', '20:05', 'EB001243', 'Cơm gà xối mỡ', 35_000, 'in'),
+      inn('wt_4', '13', '13:36', 'EB001240', 'Túi bất ngờ buổi trưa', 39_000, 'hold'),
+      out('wt_5', '12', '16:20', 'RT250013', 5_000_000, 'outd'),
+      inn('wt_6', '12', '11:08', 'EB001231', 'Túi bất ngờ cuối ngày', 98_000, 'in'),
+      out('wt_7', '11', '18:44', 'RT250012', 2_000_000, 'fail'),
+    ],
+    withdrawals: [
+      wd('RT250014', '14', '09:12', 3_000_000, 'processing', 11_420_000),
+      wd('RT250013', '12', '16:20', 5_000_000, 'done', 13_420_000),
+      wd('RT250012', '11', '18:44', 2_000_000, 'failed', 15_420_000),
+    ],
+    period: { from: '01/10', to: '14/10', moneyIn: 14_980_000, moneyOut: 8_000_000, withdrawals: 2, fee: 800_000 },
   };
 };

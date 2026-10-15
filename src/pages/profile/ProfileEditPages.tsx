@@ -6,12 +6,14 @@ import { SelectField, TextArea, TextField, Toggle } from '@/components/Field';
 import { Icon } from '@/components/Icon';
 import { ErrorState, Loading } from '@/components/States';
 import { useReturnFlow } from '@/features/profile/useReturnFlow';
+import { RulePending } from '@/features/wallet/RulePending';
 import { errorMessage, useAsync } from '@/hooks/useAsync';
 import { Page } from '@/layouts/DashboardLayout';
 import { services } from '@/services';
 import type { BankAccount, OpeningDay, RestaurantProfile } from '@/types';
 import { WEEKDAYS } from '@/utils/bags';
-import { minutesOf, normalizePhone } from '@/utils/format';
+import { minutesOf, normalizePhone, vnd } from '@/utils/format';
+import { PLATFORM_FEE_LABEL, WALLET_STATUS } from '@/utils/wallet';
 import type { Errors } from '@/utils/validation';
 
 const BUSINESS_TYPES = ['Nhà hàng', 'Quán cà phê', 'Tiệm bánh', 'Cửa hàng thực phẩm', 'Căng tin', 'Khác'];
@@ -182,13 +184,14 @@ export function ProfileContactPage() {
 /** 5.4 */
 export function ProfileBankPage() {
   const { q, draft, setDraft } = useDraft();
+  const wallet = useAsync(() => services.wallet.summary(), []);
   const { afterSave, cancelTo } = useReturnFlow('/profile');
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
 
-  if (q.error) return <Page title="Tài khoản nhận tiền"><ErrorState message={q.error} onRetry={q.reload} /></Page>;
-  if (!draft) return <Page title="Tài khoản nhận tiền"><Loading /></Page>;
+  if (q.error) return <Page title="Tài khoản ngân hàng liên kết"><ErrorState message={q.error} onRetry={q.reload} /></Page>;
+  if (!draft) return <Page title="Tài khoản ngân hàng liên kết"><Loading /></Page>;
   const bank = draft.bank;
   const setBank = (p: Partial<BankAccount>) => setDraft({ ...draft, bank: { ...bank, ...p } });
   const errors: Errors<'bankName' | 'accountNumber' | 'accountHolder'> = {
@@ -204,7 +207,7 @@ export function ProfileBankPage() {
     setBusy(true);
     try {
       await services.profile.updateBank({ bankName: bank.bankName, accountNumber: bank.accountNumber, accountHolder: bank.accountHolder.trim().replace(/\s+/g, ' ') });
-      await afterSave('Đã lưu tài khoản nhận tiền');
+      await afterSave('Đã lưu tài khoản ngân hàng');
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -213,7 +216,8 @@ export function ProfileBankPage() {
   };
 
   return (
-    <Page title="Tài khoản nhận tiền" sub="Nơi EcoBite chuyển doanh thu bán túi về" actions={<><LinkButton variant="ghost" to={cancelTo}>Huỷ</LinkButton><Button loading={busy} onClick={() => void save()}>Lưu tài khoản</Button></>}>
+    <Page title="Tài khoản ngân hàng liên kết" sub="Nơi tiền trong ví được rút về" actions={<><LinkButton variant="ghost" to={cancelTo}>Huỷ</LinkButton><Button loading={busy} onClick={() => void save()}>Lưu tài khoản</Button></>}>
+      <Note tone="ok">Tiền bán hàng vào ví của quán, không tự chuyển theo kỳ. Quán chủ động bấm rút ở màn Ví, tiền về đúng tài khoản khai ở đây.</Note>
       <div className="row">
         <Card title="Thông tin tài khoản" grow="999 1 380px">
           <div className="stack">
@@ -223,9 +227,22 @@ export function ProfileBankPage() {
             {services.demo && <Note tone="err">Đây là chế độ demo. Không kiểm tra tài khoản ngân hàng và không chuyển tiền. Đừng nhập số tài khoản thật.</Note>}
           </div>
         </Card>
-        <Card title="Kỳ đối soát" grow="1 1 280px">
-          <p className="mu">Chưa có dữ liệu đối soát. Doanh thu chờ chuyển, kỳ đối soát và phí nền tảng sẽ hiện ở đây khi máy chủ hỗ trợ.</p>
-          <div style={{ marginTop: 12 }}><Note>Mức phí và chu kỳ chuyển tiền chưa chốt, đang để theo hợp đồng. Khi có quy tắc chính thức sẽ hiện số cụ thể.</Note></div>
+        <Card title="Liên kết với ví" icon="wallet" grow="1 1 280px">
+          {wallet.data ? (
+            <>
+              <div className="rowline"><span className="mu">Số dư khả dụng</span><b className="num">{vnd(wallet.data.available)}</b></div>
+              <div className="rowline"><span className="mu">Chờ đơn kết thúc</span><b className="num">{vnd(wallet.data.holding)}</b></div>
+              <div className="rowline"><span className="mu">Lệnh rút gần nhất</span><b>{wallet.data.lastWithdrawal ? `${wallet.data.lastWithdrawal.code} · ${WALLET_STATUS[wallet.data.lastWithdrawal.status].label.toLowerCase()}` : 'Chưa có'}</b></div>
+              <div className="rowline"><span className="mu">Chiết khấu khi rút</span><b style={{ color: 'var(--g7)' }}>{PLATFORM_FEE_LABEL} mỗi lệnh</b></div>
+              <div className="rowline"><span className="mu">Thời gian xử lý</span><span><RulePending /></span></div>
+            </>
+          ) : wallet.error ? (
+            <p className="mu">{wallet.error}</p>
+          ) : (
+            <Loading />
+          )}
+          <LinkButton block variant="ghost" to="/wallet" style={{ marginTop: 12 }}><Icon name="wallet" size={16} />Mở ví của quán</LinkButton>
+          <div style={{ marginTop: 12 }}><Note>Phí rút và thời gian xử lý chưa chốt. Khi nhóm thống nhất quy tắc, số cụ thể sẽ hiện ở đây và ở màn rút tiền.</Note></div>
         </Card>
       </div>
     </Page>

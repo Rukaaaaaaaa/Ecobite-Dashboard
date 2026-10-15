@@ -12,6 +12,9 @@ import type {
   RestaurantProfile,
   RevenueAnalytics,
   StatsRange,
+  WalletSummary,
+  WalletTxn,
+  Withdrawal,
 } from '@/types';
 
 /** Error thrown by every service. `code` is machine readable, `message` is shown to the user (Vietnamese). */
@@ -114,6 +117,19 @@ export interface StatsService {
   orders(range: OrderAnalytics['range']): Promise<OrderAnalytics>;
 }
 
+export interface WalletService {
+  summary(): Promise<WalletSummary>;
+  /** Newest first. */
+  transactions(): Promise<WalletTxn[]>;
+  /** Creates a withdrawal waiting for its OTP; nothing leaves the wallet yet. Rejected without a complete bank account. */
+  startWithdrawal(amount: number): Promise<Withdrawal>;
+  getWithdrawal(code: string): Promise<Withdrawal>;
+  /** Sends the six-digit code to the owner's phone. */
+  sendWithdrawalCode(code: string): Promise<{ resendAfterSeconds: number }>;
+  /** Checks the code, then takes the money out of the wallet and starts processing. */
+  confirmWithdrawal(code: string, otp: string): Promise<Withdrawal>;
+}
+
 export interface Services {
   /** True while every service is the in-memory demo. Drives the "dữ liệu mẫu" labelling. */
   demo: boolean;
@@ -122,4 +138,5 @@ export interface Services {
   bags: BagsService;
   profile: ProfileService;
   stats: StatsService;
+  wallet: WalletService;
 }

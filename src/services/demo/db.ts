@@ -1,6 +1,6 @@
 import type { Account, Bag, Order, RestaurantProfile } from '@/types';
 import { ApiError } from '../types';
-import { blankProfile, DEMO_PASSWORD, DEMO_PHONE, seedBags, seedOrders, seedProfile } from './fixtures';
+import { blankProfile, blankWallet, DEMO_PASSWORD, DEMO_PHONE, seedBags, seedOrders, seedProfile, seedWallet, type WalletSeed } from './fixtures';
 
 /** In-memory demo "database". Lives only in this browser tab; a reload resets everything. */
 export const delay = (ms = 220): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -13,6 +13,7 @@ export interface RestaurantStore {
   profile: RestaurantProfile;
   bags: Bag[];
   orders: Order[];
+  wallet: WalletSeed;
 }
 
 const accounts: StoredAccount[] = [
@@ -42,9 +43,10 @@ export const demoDb = {
     if (!s) {
       if (a.id === 'acc_demo') {
         const bags = seedBags();
-        s = { profile: seedProfile(), bags, orders: seedOrders(bags) };
+        const profile = seedProfile();
+        s = { profile, bags, orders: seedOrders(bags), wallet: seedWallet(profile.bank) };
       } else {
-        s = { profile: blankProfile(a.phone), bags: [], orders: [] };
+        s = { profile: blankProfile(a.phone), bags: [], orders: [], wallet: blankWallet() };
       }
       stores.set(a.id, s);
     }

@@ -18,6 +18,8 @@ export function useReturnFlow(fallback: string) {
   const afterSave = async (message: string) => {
     toast.success(message);
     if (!returnTo) return navigate(fallback);
+    // Coming from the wallet: the bank account is all it needs, so do not send the owner to unrelated profile gaps.
+    if (returnTo.startsWith('/wallet')) return navigate(returnTo);
     const c = await services.profile.completeness();
     if (c.canPublish) {
       toast.success('Hồ sơ đã đủ thông tin. Quay lại sản phẩm để đăng bán.');

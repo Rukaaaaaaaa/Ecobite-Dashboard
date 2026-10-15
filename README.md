@@ -1,6 +1,6 @@
 # EcoBite Restaurant Dashboard (frontend)
 
-Ứng dụng web độc lập cho chủ nhà hàng quản lý đơn hàng, sản phẩm (đồ ăn và Mystery Bag) và hồ sơ. React + TypeScript + Vite, giao diện tiếng Việt, dựng theo bộ **29 màn** thiết kế trong `references/ecobite-dashboard-29-screens.html` (5 nhóm). File `ecobite-dashboard-29-screens.html` là nguồn chuẩn.
+Ứng dụng web độc lập cho chủ nhà hàng quản lý đơn hàng, sản phẩm (đồ ăn và Mystery Bag) và hồ sơ. React + TypeScript + Vite, giao diện tiếng Việt, dựng theo bộ **35 màn** thiết kế trong `references/ecobite-dashboard.html` (6 nhóm, **nguồn chuẩn hiện tại**). File `references/ecobite-dashboard-29-screens.html` là bản 29 màn trước đó (chưa có nhóm Ví), giữ lại để đối chiếu.
 
 > **Trạng thái: chạy hoàn toàn ở chế độ DEMO.** Mọi dữ liệu (đơn, túi, hồ sơ, số liệu) là dữ liệu mẫu nằm trong bộ nhớ trình duyệt. Chưa gọi backend EcoBite nào, không tin nhắn SMS nào được gửi. Tải lại trang là về trạng thái ban đầu. Xem mục "API còn thiếu".
 
@@ -9,7 +9,7 @@
 Cần Node 20 trở lên (đã thử với Node 24).
 
 ```bash
-cd Ecobite-Dashboard
+cd restaurant-dashboard
 npm install
 npm run dev          # http://localhost:5174  (cổng cố định, không trùng Expo 8081 / backend 3000)
 ```
@@ -36,7 +36,7 @@ Tài khoản là **số điện thoại**; không còn email ở bất kỳ màn
 
 Đăng ký tài khoản mới (họ tên, số điện thoại, mật khẩu) rồi nhập mã OTP; xác thực xong vào thẳng Dashboard. Tài khoản mới là một nhà hàng trống, dùng để xem các trạng thái rỗng và luồng “hoàn thiện hồ sơ để đăng bán”. Quên mật khẩu: số điện thoại → mã OTP → mật khẩu mới (một route `/forgot-password`, ba bước). Dữ liệu đăng nhập/OTP chỉ nằm trong bộ nhớ, không ghi `localStorage`; tải lại trang là phải đăng nhập lại. (Chỉ lựa chọn bật/tắt thông báo ở Cài đặt được lưu trên trình duyệt.)
 
-## Đã làm được (29 màn)
+## Đã làm được (35 màn)
 
 | Nhóm | Màn | Route |
 |---|---|---|
@@ -44,11 +44,15 @@ Tài khoản là **số điện thoại**; không còn email ở bất kỳ màn
 | 2. Tổng quan quản lý | 2.1 Dashboard, 2.2 Phân tích doanh thu, 2.3 Phân tích đơn hàng, 2.4 Đơn cần xử lý, 2.5 Sản phẩm sắp hết | `/` `/analytics/revenue` `/analytics/orders` `/orders/pending` `/products/expiring` |
 | 3. Quản lý đơn hàng | 3.1 Danh sách (tìm, lọc trạng thái, phân trang, xuất CSV, phân biệt đồ ăn / Mystery Bag), 3.2 Chi tiết, 3.3 Xử lý (xác nhận → soạn xong), 3.4 Xác minh mã nhận hàng, 3.5 Lịch sử | `/orders` `/orders/:id` `/orders/:id/process` `/orders/verify` `/orders/history` |
 | 4. Quản lý sản phẩm | 4.1 Danh sách (lọc theo loại và trạng thái), 4.2 Chọn loại sản phẩm, 4.3 Tạo đồ ăn mới, 4.4 Tạo Mystery Bag, 4.5 Chỉnh sửa (đổi được loại), 4.6 Giá và số lượng, 4.7 Khung giờ, 4.8 Xem trước và kiểm tra, 4.9 Bảng trạng thái | `/products` `/products/new` `/products/new/food` `/products/new/bag` `/products/:id/edit?step=info|pricing|schedule|preview` `/products/status` (`/bags/*` cũ chuyển sang `/products/*`) |
-| 5. Hồ sơ nhà hàng và cài đặt | 5.1 Tổng quan hồ sơ, 5.2 Thông tin và giờ mở cửa, 5.3 Liên hệ và địa chỉ (SĐT, Zalo), 5.4 Tài khoản nhận tiền, 5.5 Cài đặt (đổi số, đổi mật khẩu, bật/tắt đăng nhập OTP, thông báo) | `/profile` `/profile/edit` `/profile/contact` `/profile/bank` `/settings` |
+| 5. Hồ sơ nhà hàng và cài đặt | 5.1 Tổng quan hồ sơ, 5.2 Thông tin và giờ mở cửa, 5.3 Liên hệ và địa chỉ (SĐT, Zalo), 5.4 Tài khoản ngân hàng liên kết (liên kết với ví), 5.5 Cài đặt (đổi số, đổi mật khẩu, bật/tắt đăng nhập OTP, thông báo) | `/profile` `/profile/edit` `/profile/contact` `/profile/bank` `/settings` |
+| 6. Ví và rút tiền | 6.1 Ví của quán (số dư khả dụng, tiền chờ đơn kết thúc, giao dịch gần đây, quy tắc rút), 6.2 Lịch sử giao dịch (lọc, 3 cột trừ ví / chiết khấu 10% / về ngân hàng, xuất CSV), 6.3 Rút tiền (số thực nhận tính ngay), 6.4 Xác thực lệnh rút bằng mã OTP, 6.5 Chi tiết lệnh rút (tiến trình, số dư sau lệnh), 6.6 Chưa thể rút tiền (khi chưa khai ngân hàng) | `/wallet` `/wallet/history` `/wallet/withdraw` `/wallet/withdraw/:code/verify` `/wallet/withdrawals/:code` (6.6 là trạng thái của `/wallet/withdraw`) |
 
 Sản phẩm có hai loại, giữ riêng từ đường dẫn tới dữ liệu: **đồ ăn** (có *nhóm món* bắt buộc) và **Mystery Bag** (có *danh sách món nội bộ*, khách không thấy). Đổi loại trong form thì các trường đặc thù của loại kia bị bỏ khi lưu. Bước 1–4 của form tương ứng 4.3–4.8 của thiết kế (4.6 = bước Giá và số lượng, 4.7 = Khung giờ, 4.8 = Xem trước).
 
 Hành vi đáng chú ý:
+
+- **Ví (nhóm 6, dữ liệu mẫu cố định).** Số dư 8.420.000đ, chờ đơn kết thúc 2.130.000đ, tài khoản Vietcombank •••• 4417 (số mẫu, không thật). Mỗi lệnh rút bị trừ **10% chiết khấu ngay khi tạo lệnh** (`utils/wallet.ts`, một chỗ duy nhất); số rút là số trừ khỏi ví, ngân hàng nhận phần còn lại. Tiền chỉ rời ví sau khi nhập đúng mã OTP (`123456`, sai 3 lần thì khoá, hết hạn sau 2 phút). Lệnh vừa tạo ở lại “Đang xử lý”, demo không tự hoàn tất vì thời gian ngân hàng báo nhận chưa chốt. **Số tiền tối thiểu, hạn mức mỗi ngày, thời gian xử lý, huỷ lệnh đang chuyển và việc hoàn lại tiền của lệnh không thành công chưa có quy tắc**: các màn hiện nhãn “Chờ xác nhận quy tắc”, nút huỷ bị khoá, không đặt giới hạn nào. Tài khoản đăng ký mới có ví trống và chưa có ngân hàng nên rút tiền hiện màn 6.6; khai ngân hàng xong quay lại thẳng màn rút. Số liệu “trong kỳ” ở 6.2 là số mẫu cố định, không cộng từ danh sách.
+- **Tài khoản demo giờ đã có sẵn ngân hàng** (để thử ví). Muốn xem luồng “hồ sơ chưa đủ” và 6.6, đăng ký tài khoản mới.
 
 - **Vào Dashboard khi hồ sơ chưa đủ.** Chỉ khi đăng bán sản phẩm mới bị chặn: sản phẩm được lưu nháp, hiện hộp thoại liệt kê mục còn thiếu (kể cả xác thực số điện thoại), dẫn tới đúng trang cần điền (`?returnTo=`), và sau khi đủ thì quay lại bước xem trước.
 - **Vòng đời đơn** chỉ gồm thao tác đã có quy tắc: Chờ xác nhận → Đã xác nhận → Chờ khách lấy → Hoàn thành (giao bằng nhập mã). **Từ chối đơn đã thanh toán và hoàn tiền bị khoá** (hiện rõ “Chờ xác nhận quy tắc”), không tự thêm trạng thái.
@@ -81,7 +85,8 @@ Không có gì dưới đây được giả lập như thể đã hoạt động
 4. **Đơn của nhà hàng**: chưa có danh sách/chi tiết theo nhà hàng có xác thực. Chỉ có các route `/api/dev/*` **không xác thực** (`advance`, `staff-scan`) và dev-only, tuyệt đối không dùng cho production.
 5. **Trạng thái đơn**: backend là `placed → paid → preparing → ready → qr_verified → picked_up (+ cancelled/expired)`. Thiết kế dùng Chờ xác nhận / Đã xác nhận / Chờ khách lấy / Hoàn thành / Khách không lấy / Khách đã huỷ. Cách ánh xạ đề xuất nằm trong `src/types/index.ts`, cần xác nhận. “Khách không lấy” chưa có trạng thái tương ứng; từ chối/hoàn tiền chưa có quy tắc.
 6. **Sản phẩm (`foodbags`)**: chưa có API tạo/sửa/tạm dừng; mô hình chưa có loại sản phẩm (đồ ăn / Mystery Bag), nhóm món, danh sách món nội bộ, trạng thái nháp/đang bán/tạm dừng, nhiều khung giờ bán và nhận, ngày lặp lại, giới hạn mỗi khách, ảnh riêng (chỉ có `art` là mã ảnh mẫu) và upload ảnh.
-7. **Hồ sơ nhà hàng**: thiếu loại hình, mô tả, giờ mở cửa, chỉ dẫn, Zalo, chủ sở hữu, **tài khoản ngân hàng nhận tiền** (không có trong mô hình), kỳ đối soát.
+7. **Hồ sơ nhà hàng**: thiếu loại hình, mô tả, giờ mở cửa, chỉ dẫn, Zalo, chủ sở hữu, **tài khoản ngân hàng nhận tiền** (không có trong mô hình).
+7b. **Ví và rút tiền**: backend không có ví, sổ giao dịch, lệnh rút, chiết khấu, OTP xác thực lệnh rút, hay liên kết đơn hoàn thành → tiền vào ví. Cần thiết kế riêng (collection mới, thao tác trừ ví nguyên tử, chống rút trùng) và được người phụ trách cơ sở dữ liệu duyệt trước khi làm. Toàn bộ nhóm 6 đang là demo trong bộ nhớ.
 8. **Số liệu**: không có API doanh thu, KPI, phân tích, tác động môi trường.
 9. **Quét QR bằng camera**: chưa làm, hiện chỉ nhập mã tay.
 10. Ghi nhớ đăng nhập: chưa làm có chủ đích (cần cơ chế token an toàn từ backend, không lưu token/mật khẩu vào `localStorage`).

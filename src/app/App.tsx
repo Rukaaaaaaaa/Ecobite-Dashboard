@@ -28,6 +28,12 @@ const ProductTypePage = lazy(() => import('@/pages/bags/ProductTypePage'));
 const BagStatusBoardPage = lazy(() => import('@/pages/bags/BagStatusBoardPage'));
 const ExpiringBagsPage = lazy(() => import('@/pages/bags/ExpiringBagsPage'));
 
+const WalletPage = lazy(() => import('@/pages/wallet/WalletPage'));
+const WalletHistoryPage = lazy(() => import('@/pages/wallet/WalletHistoryPage'));
+const WithdrawPage = lazy(() => import('@/pages/wallet/WithdrawPage'));
+const WithdrawVerifyPage = lazy(() => import('@/pages/wallet/WithdrawVerifyPage'));
+const WithdrawalDetailPage = lazy(() => import('@/pages/wallet/WithdrawalDetailPage'));
+
 const ProfileOverviewPage = lazy(() => import('@/pages/profile/ProfileOverviewPage'));
 const ProfileEditPage = lazy(() => import('@/pages/profile/ProfileEditPages').then((m) => ({ default: m.ProfileEditPage })));
 const ProfileContactPage = lazy(() => import('@/pages/profile/ProfileEditPages').then((m) => ({ default: m.ProfileContactPage })));
@@ -89,6 +95,12 @@ export function App() {
                 <Route path="products/status" element={<BagStatusBoardPage />} />
                 <Route path="products/:id/edit" element={<BagEditorPage />} />
                 <Route path="bags/*" element={<LegacyBagsRedirect />} />
+
+                <Route path="wallet" element={<WalletPage />} />
+                <Route path="wallet/history" element={<WalletHistoryPage />} />
+                <Route path="wallet/withdraw" element={<WithdrawPage />} />
+                <Route path="wallet/withdraw/:code/verify" element={<WithdrawVerifyPage />} />
+                <Route path="wallet/withdrawals/:code" element={<WithdrawalDetailPage />} />
 
                 <Route path="profile" element={<ProfileOverviewPage />} />
                 <Route path="profile/edit" element={<ProfileEditPage />} />
