@@ -35,10 +35,18 @@ export function DashboardLayout() {
   useEffect(() => setOpen(false), [location.pathname]);
   useEffect(() => {
     let live = true;
-    void services.orders.pendingCount().then((n) => live && setPending(n));
-    void services.profile.get().then((p) => live && setRestaurantName(p.name));
+    let inFlight = false;
+    const refresh = () => {
+      if (document.hidden || inFlight) return;
+      inFlight = true;
+      void services.orders.pendingCount().then((n) => live && setPending(n)).catch(() => {}).finally(() => { inFlight = false; });
+    };
+    refresh();
+    const timer = services.demo ? undefined : window.setInterval(refresh, 3000);
+    void services.profile.get().then((p) => live && setRestaurantName(p.name)).catch(() => {});
     return () => {
       live = false;
+      window.clearInterval(timer);
     };
   }, [location.pathname]);
 
@@ -78,6 +86,12 @@ export function DashboardLayout() {
               <span>
                 <b>Chế độ demo.</b> Số liệu, đơn hàng và sản phẩm là dữ liệu mẫu trong bộ nhớ trình duyệt, chưa kết nối máy chủ EcoBite. Tải lại trang sẽ đặt về ban đầu.
               </span>
+            </div>
+          )}
+          {!services.demo && location.pathname !== '/' && !location.pathname.startsWith('/orders') && (
+            <div className="demo-banner" role="note">
+              <Icon name="warn" size={15} />
+              <span>Đang kết nối máy chủ EcoBite. Thay đổi được lưu vào máy chủ. Yêu cầu rút tiền cần quản trị xử lý; chưa có chuyển khoản tự động hoặc xác thực SMS.</span>
             </div>
           )}
           <Outlet />

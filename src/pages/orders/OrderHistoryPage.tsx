@@ -14,7 +14,7 @@ import type { OrderStatus } from '@/types';
 import { downloadCsv } from '@/utils/csv';
 import { businessDate, vnd } from '@/utils/format';
 
-type Filter = 'all' | Extract<OrderStatus, 'done' | 'cancel' | 'miss'>;
+type Filter = 'all' | Extract<OrderStatus, 'done' | 'cancel' | 'miss' | 'expired'>;
 const PAGE = 10;
 const daysAgo = (n: number) => businessDate(new Date(Date.now() - n * 86400000));
 
@@ -26,7 +26,7 @@ export default function OrderHistoryPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [page, setPage] = useState(1);
   const rangeBad = from > to;
-  const q = useAsync(() => services.orders.list({ finishedOnly: true, fromDate: from, toDate: to, pageSize: 5000 }), [from, to]);
+  const q = useAsync(() => services.orders.list({ finishedOnly: true, fromDate: from, toDate: to, pageSize: 5000 }), [from, to], services.demo ? 0 : 3000);
 
   const all = q.data?.items ?? [];
   const rows = useMemo(() => (filter === 'all' ? all : all.filter((o) => o.status === filter)), [all, filter]);
@@ -78,7 +78,7 @@ export default function OrderHistoryPage() {
               <Chip active={filter === 'all'} count={all.length} onClick={() => pick('all')}>Tất cả</Chip>
               <Chip active={filter === 'done'} count={count('done')} onClick={() => pick('done')}>Hoàn thành</Chip>
               <Chip active={filter === 'cancel'} count={count('cancel')} onClick={() => pick('cancel')}>Khách đã huỷ</Chip>
-              <Chip active={filter === 'miss'} count={count('miss')} onClick={() => pick('miss')}>Khách không lấy</Chip>
+              {services.demo ? <Chip active={filter === 'miss'} count={count('miss')} onClick={() => pick('miss')}>Khách không lấy</Chip> : <Chip active={filter === 'expired'} count={count('expired')} onClick={() => pick('expired')}>Hết hạn thanh toán</Chip>}
             </div>
           </Card>
           <Card>
@@ -91,7 +91,7 @@ export default function OrderHistoryPage() {
               </>
             )}
           </Card>
-          <Note>Đơn khách không tới lấy vẫn ghi nhận doanh thu vì khách đã trả tiền. Cách xử lý phần thức ăn còn lại cần quy tắc riêng, chưa chốt.</Note>
+          <Note>{services.demo ? 'Đơn khách không tới lấy vẫn ghi nhận doanh thu vì khách đã trả tiền. Cách xử lý phần thức ăn còn lại cần quy tắc riêng, chưa chốt.' : 'Doanh thu ghi nhận từ trạng thái thanh toán trên máy chủ. Đơn tiền mặt chỉ được đánh dấu đã thanh toán sau khi khách xác nhận nhận túi.'}</Note>
         </>
       )}
     </Page>

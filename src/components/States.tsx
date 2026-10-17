@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button } from './Button';
 import { Icon, type IconName } from './Icon';
+import { services } from '@/services';
 
 export function Loading({ label = 'Đang tải…' }: { label?: string }) {
   return (
@@ -43,5 +44,5 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 /** Marks a block whose numbers come from the demo service. */
 export function DemoTag({ children = 'Dữ liệu mẫu' }: { children?: string }) {
-  return <span className="demo-tag">{children}</span>;
+  return services.demo ? <span className="demo-tag">{children}</span> : null;
 }

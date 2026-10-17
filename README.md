@@ -1,4 +1,81 @@
-# EcoBite Restaurant Dashboard (frontend)
+# EcoBite Restaurant Dashboard (frontend) — live order integration
+
+## Live connection (default)
+
+The dashboard now connects to the EcoBite NestJS backend. Customer orders and restaurant updates share the same MongoDB records. The two repositories remain independent.
+
+- Receive customer orders automatically (visible pages refresh every 3 seconds).
+- See every line item, quantity, discounts, pickup window, masked customer phone and cash/bank payment status.
+- Confirm orders, mark them ready and verify the customer's secure pickup token.
+- The customer app sees those changes through its existing polling. After pickup verification, the customer confirms receipt; completion appears in the dashboard.
+- Unpaid, expired, cancelled and pickup-verified orders remain distinct.
+- The original overview, analytics, products, wallet, restaurant profile, and settings screens work with live backend data. There is no fallback to demo data.
+- Product creation, editing, publishing/pausing, schedules and customer limits persist in the shared catalog. Stock reservations are preserved when editing. Schedule changes are blocked while that product has unfinished orders.
+- Restaurant/contact/bank details, password changes, and notification preferences persist on the backend. Notification delivery, SMS verification/login, and staff invitations are not configured.
+- In **Hồ sơ nhà hàng → Liên hệ và địa chỉ**, enter the address, use **Tìm vị trí từ địa chỉ**, select a result and save the confirmed map pin. Customer distances use GPS first, then their saved address, then their account district's centre (approximate). Distances are straight-line kilometres. See `E:\ecobite\docs\LOCATION-DISTANCE.md` for setup and provider details.
+- Analytics derive from real orders. Revenue counts successful payments on completed orders; the wallet credits completed **bank-transfer** orders only, since cash is collected at the restaurant.
+- Withdrawal requests persist, reserve the balance after password confirmation, and remain pending operator processing. No automatic bank payout or SMS code is sent. The existing 10% withdrawal fee is retained.
+
+### Setup
+
+Run the backend and dashboard in **two separate PowerShell terminals**.
+
+1. Start the EcoBite backend on port 3000:
+
+```powershell
+cd E:\ecobite\backend
+npm.cmd install
+npm.cmd run start:dev
+```
+
+2. In a second terminal, start the dashboard:
+
+```powershell
+cd E:\EcoBite-Dashboard
+npm.cmd install
+if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }
+npm.cmd run dev
+```
+
+The copy command creates `.env.local` only if it does not already exist. Make sure it contains:
+
+```dotenv
+VITE_API_URL=http://localhost:3000/api
+VITE_DEMO_MODE=false
+```
+
+Open **http://localhost:5174/register** to create a restaurant account with full name, phone, restaurant name, address and password. Signup signs in immediately; there is no SMS step. Use the same phone and password at **http://localhost:5174/login** later. New accounts have an empty private restaurant. Complete its public name, address and phone, then create and publish a product to add it to the customer catalog. Pickup times must fit the backend's offered pickup slots. Repeating days control availability; they do not automatically replenish stock.
+
+Keep both terminals running while using the dashboard. You can skip `npm.cmd install` if dependencies are already installed. Adjust the `cd` paths if your repositories are stored elsewhere.
+
+Point the customer app's `EXPO_PUBLIC_API_URL` at the same backend (use its LAN IP for a phone). For **existing restaurants or EcoBite accounts**, an operator can optionally provision access in backend `.env`:
+
+```dotenv
+RESTAURANT_ACCESS={"<owner-user-id>":"<restaurant-id>"}
+```
+
+Use `account.id` from EcoBite login, not a phone/email. Only the server operator grants this override; ordinary customer accounts need it. New dashboard signups automatically have access to their own private restaurant. Several users may manage one restaurant; each user is assigned one restaurant. Restart the backend after changing access.
+
+Sign in with that account's existing phone/password. JWTs stay in memory; a dashboard reload signs out. Existing EcoBite accounts without an assignment receive an access-denied message. New restaurant accounts need no manual assignment. `MONGODB_URI` on the backend is required for durable/shared data; its development in-memory database resets on restart.
+
+If login says **“Tài khoản chưa được cấp quyền quản lý nhà hàng”**, the account has no restaurant assignment. Register with an unused phone number for a new restaurant, or have the backend operator add the existing account ID and restaurant ID to `RESTAURANT_ACCESS` above, then restart the backend and log in again.
+
+Staff manually enter the **case-sensitive `pk_...` token** below the customer's pickup QR. The public `EB-...` order reference cannot authorize pickup. Camera scanning is not implemented.
+
+```bash
+npm install
+npm run dev        # http://localhost:5174
+npm run typecheck
+npm run build
+npm run test:orders # headless Chromium contract smoke test; requires free ports 3000/5174
+```
+
+Implementation: `src/services/live.ts`, the existing `services/http.ts`, and the single service selection in `services/index.ts`. Registration/password hashes live in the backend-owned `merchantaccounts` collection; shared customer users and catalog documents are unchanged. Authenticated `/api/merchant/*` endpoints enforce the server's restaurant assignment. See **EcoBite/docs/RESTAURANT-INTEGRATION.md** in the backend repository for the API contract, security boundaries, setup and end-to-end checks.
+
+## Original demo reference
+
+The remainder describes the original demo **only**. Set `VITE_DEMO_MODE=true` to use it. Historical statements below about missing backend endpoints are superseded by the live connection above for authentication and restaurant orders. Demo data, OTPs and wallet balances never appear in live mode.
+
 
 Ứng dụng web độc lập cho chủ nhà hàng quản lý đơn hàng, sản phẩm (đồ ăn và Mystery Bag) và hồ sơ. React + TypeScript + Vite, giao diện tiếng Việt, dựng theo bộ **35 màn** thiết kế trong `references/ecobite-dashboard.html` (6 nhóm, **nguồn chuẩn hiện tại**). File `references/ecobite-dashboard-29-screens.html` là bản 29 màn trước đó (chưa có nhóm Ví), giữ lại để đối chiếu.
 

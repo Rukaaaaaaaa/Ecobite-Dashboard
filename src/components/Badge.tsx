@@ -8,6 +8,9 @@ export function Badge({ tone, children, small }: { tone: Tone; children: ReactNo
 }
 
 export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: Tone }> = {
+  unpaid: { label: 'Chờ thanh toán', tone: 'a' },
+  verified: { label: 'Đã xác minh · chờ khách xác nhận', tone: 'b' },
+  expired: { label: 'Hết hạn thanh toán', tone: 'x' },
   wait: { label: 'Chờ xác nhận', tone: 'a' },
   conf: { label: 'Đã xác nhận', tone: 'b' },
   ready: { label: 'Chờ khách lấy', tone: 'g' },
@@ -18,14 +21,17 @@ export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: Tone }> = 
 
 export const BAG_STATUS: Record<BagStatus, { label: string; tone: Tone }> = {
   draft: { label: 'Nháp', tone: 'x' },
-  live: { label: 'Đang bán', tone: 'g' },
+  live: { label: 'Đăng bán', tone: 'g' },
   paused: { label: 'Tạm dừng', tone: 'a' },
 };
 
-export const ORDER_STATUS_ORDER: OrderStatus[] = ['wait', 'conf', 'ready', 'done', 'miss', 'cancel'];
+export const ORDER_STATUS_ORDER: OrderStatus[] = ['unpaid', 'wait', 'conf', 'ready', 'verified', 'done', 'miss', 'cancel', 'expired'];
 
 /** Colour used by charts for each status (same palette as the badges). */
 export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
+  unpaid: 'var(--amb)',
+  verified: 'var(--blu)',
+  expired: 'var(--gry)',
   wait: 'var(--amb)',
   conf: 'var(--blu)',
   ready: 'var(--g6)',

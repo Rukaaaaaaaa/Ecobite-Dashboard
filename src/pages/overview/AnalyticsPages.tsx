@@ -69,8 +69,8 @@ export function OrderAnalyticsPage() {
       ) : (
         <>
           <div className="row">
-            <Kpi icon="doc" label={`Tổng đơn ${range === '7d' ? '7' : '30'} ngày`} value={d.total.toLocaleString('vi-VN')} delta="7%" deltaSuffix=" so với kỳ trước" />
-            <Kpi icon="chk" label="Tỷ lệ hoàn thành" value={`${d.completionRate.toLocaleString('vi-VN')}%`} delta="1,2 điểm" deltaSuffix=" so với kỳ trước" />
+            <Kpi icon="doc" label={`Tổng đơn ${range === '7d' ? '7' : '30'} ngày`} value={d.total.toLocaleString('vi-VN')} delta={services.demo ? '7%' : undefined} deltaSuffix={services.demo ? ' so với kỳ trước' : undefined} />
+            <Kpi icon="chk" label="Tỷ lệ hoàn thành" value={`${d.completionRate.toLocaleString('vi-VN')}%`} delta={services.demo ? '1,2 điểm' : undefined} deltaSuffix={services.demo ? ' so với kỳ trước' : undefined} />
             <Kpi icon="clock" amber label="Thời gian xác nhận trung bình" value={formatDuration(d.avgConfirmSeconds)} delta="Cần giữ dưới 5 phút" />
           </div>
           <div className="row">
@@ -79,10 +79,10 @@ export function OrderAnalyticsPage() {
               <BarChart data={d.byWeekday} unit="" ariaLabel="Số đơn theo ngày trong tuần" highlight={Math.max(...d.byWeekday.map((p) => p.value)) * 0.85} />
             </Card>
           </div>
-          <Card title="Vì sao đơn không thành" action={<span className="bg2 tone-a">Dữ liệu mẫu</span>}>
+          <Card title="Vì sao đơn không thành" action={<DemoTag />}>
             <HBars rows={d.failReasons} />
             <div style={{ marginTop: 12 }}>
-              <Note>Phần phân loại lý do huỷ cần quy tắc nghiệp vụ được xác nhận trước khi làm thật. Hiện chỉ là nhóm tạm để xem bố cục.</Note>
+              <Note>{services.demo ? 'Phần phân loại lý do huỷ cần quy tắc nghiệp vụ được xác nhận trước khi làm thật. Hiện chỉ là nhóm tạm để xem bố cục.' : 'Thống kê đơn đã huỷ và đơn hết hạn từ máy chủ.'}</Note>
             </div>
           </Card>
         </>

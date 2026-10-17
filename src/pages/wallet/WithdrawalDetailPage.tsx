@@ -21,11 +21,11 @@ const at = (iso: string | null): string => (iso ? `${businessTime(iso)} · ${sho
 function stepsOf(w: Withdrawal): { label: string; time: string; state: StepState }[] {
   const base = [
     { label: 'Đã tạo lệnh', time: at(w.createdAt), state: 'done' as const },
-    { label: 'Đã xác thực bằng mã OTP', time: at(w.verifiedAt), state: 'done' as const },
+    { label: services.demo ? 'Đã xác thực bằng mã OTP' : 'Đã xác nhận bằng mật khẩu', time: at(w.verifiedAt), state: 'done' as const },
   ];
   if (w.status === 'done') return [...base, { label: 'Đã chuyển tới ngân hàng', time: 'Đã hoàn tất', state: 'done' }, { label: 'Ngân hàng báo nhận', time: 'Đã hoàn tất', state: 'done' }];
   if (w.status === 'failed') return [...base, { label: 'Không thành công', time: 'Ngân hàng không nhận lệnh', state: 'bad' }];
-  return [...base, { label: 'Đang chuyển tới ngân hàng', time: at(w.verifiedAt), state: 'now' }, { label: 'Ngân hàng báo nhận', time: 'Chưa có', state: 'todo' }];
+  return [...base, { label: services.demo ? 'Đang chuyển tới ngân hàng' : 'Chờ quản trị xử lý chuyển khoản', time: at(w.verifiedAt), state: 'now' }, { label: 'Ngân hàng báo nhận', time: 'Chưa có', state: 'todo' }];
 }
 
 const DOT: Record<StepState, { bg: string; color: string }> = {

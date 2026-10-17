@@ -10,6 +10,7 @@ import { RulePending } from '@/features/wallet/RulePending';
 import { errorMessage, useAsync } from '@/hooks/useAsync';
 import { Page } from '@/layouts/DashboardLayout';
 import { services } from '@/services';
+import { http } from '@/services/http';
 import type { BankAccount, OpeningDay, RestaurantProfile } from '@/types';
 import { WEEKDAYS } from '@/utils/bags';
 import { minutesOf, normalizePhone, vnd } from '@/utils/format';
@@ -107,6 +108,8 @@ export function ProfileContactPage() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [matches, setMatches] = useState<{ label: string; point: { latitude: number; longitude: number } }[]>([]);
 
   if (q.error) return <Page title="Liên hệ và địa chỉ"><ErrorState message={q.error} onRetry={q.reload} /></Page>;
   if (!draft) return <Page title="Liên hệ và địa chỉ"><Loading /></Page>;
@@ -122,6 +125,17 @@ export function ProfileContactPage() {
   };
   const bad = Object.values(errors).some(Boolean);
   const set = (p: Partial<RestaurantProfile>) => setDraft({ ...draft, ...p });
+  const setAddress = (p: Partial<RestaurantProfile>) => { set({ ...p, lat: null, lng: null }); setMatches([]); };
+  const lookup = async () => {
+    setLocating(true); setMatches([]);
+    try {
+      const address = [draft.street, draft.ward, draft.district, draft.city, 'Việt Nam'].filter(Boolean).join(', ');
+      const rows = await http<typeof matches>('/location/search', { method: 'POST', body: { address } });
+      setMatches(rows);
+      if (!rows.length) toast.error('Không tìm thấy địa chỉ. Thêm thông tin hoặc nhập tọa độ.');
+    } catch (error) { toast.error(errorMessage(error)); }
+    finally { setLocating(false); }
+  };
   const err = <K extends keyof typeof errors>(k: K) => (show ? errors[k] : undefined);
   const num = (s: string): number | null => (s.trim() === '' || Number.isNaN(Number(s)) ? null : Number(s));
 
@@ -140,15 +154,15 @@ export function ProfileContactPage() {
   };
 
   return (
-    <Page title="Liên hệ và địa chỉ" sub="Nơi khách tới lấy hàng và cách EcoBite gọi khi cần" actions={<><LinkButton variant="ghost" to={cancelTo}>Huỷ</LinkButton><Button loading={busy} onClick={() => void save()}>Lưu thay đổi</Button></>}>
+    <Page title="Liên hệ và địa chỉ" sub="Nơi khách tới lấy hàng và cách EcoBite gọi khi cần" actions={<><LinkButton variant="ghost" to={cancelTo}>Huỷ</LinkButton><Button loading={busy} disabled={locating} onClick={() => void save()}>Lưu thay đổi</Button></>}>
       <div className="row">
         <Card title="Địa chỉ nhận hàng" grow="999 1 400px">
           <div className="stack">
-            <TextField label="Số nhà và tên đường" required value={draft.street} onChange={(e) => set({ street: e.target.value })} error={err('street')} />
+            <TextField label="Số nhà và tên đường" required disabled={locating} value={draft.street} onChange={(e) => setAddress({ street: e.target.value })} error={err('street')} />
             <div className="grid3">
-              <TextField label="Phường, xã" required value={draft.ward} onChange={(e) => set({ ward: e.target.value })} error={err('ward')} />
-              <TextField label="Quận, huyện" value={draft.district} onChange={(e) => set({ district: e.target.value })} />
-              <TextField label="Tỉnh, thành phố" required value={draft.city} onChange={(e) => set({ city: e.target.value })} error={err('city')} />
+              <TextField label="Phường, xã" required disabled={locating} value={draft.ward} onChange={(e) => setAddress({ ward: e.target.value })} error={err('ward')} />
+              <TextField label="Quận, huyện" disabled={locating} value={draft.district} onChange={(e) => setAddress({ district: e.target.value })} />
+              <TextField label="Tỉnh, thành phố" required disabled={locating} value={draft.city} onChange={(e) => setAddress({ city: e.target.value })} error={err('city')} />
             </div>
             <TextField label="Chỉ dẫn thêm" value={draft.directions} onChange={(e) => set({ directions: e.target.value })} placeholder="vd: trong ngõ, cổng màu xanh bên tay phải" />
             <h3 className="ttl" style={{ marginTop: 4, marginBottom: 0 }}>Liên hệ</h3>
@@ -159,7 +173,12 @@ export function ProfileContactPage() {
           </div>
         </Card>
         <Card title="Vị trí trên bản đồ" grow="1 1 280px">
-          <div style={{ position: 'relative', height: 190, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--ln)' }} role="img" aria-label="Bản đồ minh hoạ vị trí quán">
+          {!services.demo && <div className="stack" style={{ marginBottom: 12 }}>
+            <Button loading={locating} disabled={!draft.street.trim() || !draft.city.trim()} onClick={() => void lookup()}>Tìm vị trí từ địa chỉ</Button>
+            {matches.map((match, i) => <button type="button" className="bt gh" key={i} onClick={() => { set({ lat: match.point.latitude, lng: match.point.longitude }); setMatches([]); }}>{match.label}</button>)}
+            {draft.lat === null || draft.lng === null ? <p className="mu">Chọn kết quả tra cứu hoặc nhập tọa độ để khách tính khoảng cách đến quán.</p> : <iframe title="Vị trí nhà hàng" height={210} style={{ width: '100%', border: '1px solid var(--ln)', borderRadius: 10 }} src={`https://www.openstreetmap.org/export/embed.html?bbox=${draft.lng - 0.005},${draft.lat - 0.003},${draft.lng + 0.005},${draft.lat + 0.003}&layer=mapnik&marker=${draft.lat},${draft.lng}`} />}
+          </div>}
+          {services.demo && <div style={{ position: 'relative', height: 190, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--ln)' }} role="img" aria-label="Bản đồ minh hoạ vị trí quán">
             <svg viewBox="0 0 400 190" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} aria-hidden="true">
               <rect width="400" height="190" fill="#E9F0EB" />
               <path d="M0 58h400M0 130h400M110 0v190M250 0v190" stroke="#D5E2D9" strokeWidth="9" fill="none" />
@@ -169,12 +188,12 @@ export function ProfileContactPage() {
             <span style={{ position: 'absolute', left: '50%', top: '48%', transform: 'translate(-50%,-100%)', color: 'var(--g7)' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="#fff" strokeWidth="1.5"><path d="M12 22s7-6.3 7-12A7 7 0 0 0 5 10c0 5.7 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#fff" stroke="none" /></svg>
             </span>
-          </div>
+          </div>}
           <div className="grid2" style={{ marginTop: 12 }}>
             <TextField label="Vĩ độ" inputMode="decimal" value={draft.lat === null ? '' : String(draft.lat)} onChange={(e) => set({ lat: num(e.target.value) })} error={err('lat')} />
             <TextField label="Kinh độ" inputMode="decimal" value={draft.lng === null ? '' : String(draft.lng)} onChange={(e) => set({ lng: num(e.target.value) })} error={err('lng')} />
           </div>
-          <div style={{ marginTop: 11 }}><Note tone="warn">Bản đồ chỉ để minh hoạ, chưa tích hợp dịch vụ bản đồ. Nhập tọa độ đúng cửa ra vào; lệch vị trí là lý do phổ biến nhất khiến khách không tìm thấy quán.</Note></div>
+          <div style={{ marginTop: 11 }}><Note tone="warn">{services.demo ? 'Bản đồ minh hoạ.' : 'Kiểm tra ghim đúng cửa ra vào rồi lưu thay đổi. Khách dùng GPS hoặc vị trí tài khoản để tính khoảng cách đường thẳng. Tra cứu: Photon · © OpenStreetMap contributors.'}</Note></div>
         </Card>
       </div>
     </Page>

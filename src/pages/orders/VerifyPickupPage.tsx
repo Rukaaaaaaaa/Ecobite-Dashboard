@@ -20,7 +20,7 @@ export default function VerifyPickupPage() {
   const [found, setFound] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [delivering, setDelivering] = useState(false);
-  const recent = useAsync(() => services.orders.recentDeliveries(), []);
+  const recent = useAsync(() => services.orders.recentDeliveries(), [], services.demo ? 0 : 3000);
 
   const check = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,7 +41,7 @@ export default function VerifyPickupPage() {
     setDelivering(true);
     try {
       await services.orders.completePickup(found.id);
-      toast.success(`Đã giao túi cho ${found.customer}`);
+      toast.success(services.demo ? `Đã giao túi cho ${found.customer}` : 'Đã xác minh mã. Khách xác nhận đã nhận túi trên ứng dụng để hoàn tất.');
       setFound(null);
       setCode('');
       recent.reload();
@@ -61,9 +61,9 @@ export default function VerifyPickupPage() {
           <div aria-hidden="true" style={{ width: 190, height: 190, margin: '4px auto 14px', border: '2px dashed var(--ln2)', borderRadius: 14, display: 'grid', placeItems: 'center', background: 'var(--soft)', color: 'var(--ink3)' }}>
             <Icon name="qr" size={74} />
           </div>
-          <p className="mu" style={{ margin: '0 0 13px' }}>Quét bằng camera chưa được hỗ trợ. Hãy nhập mã hiển thị trên điện thoại của khách.</p>
+          <p className="mu" style={{ margin: '0 0 13px' }}>{services.demo ? 'Hãy nhập mã hiển thị trên điện thoại của khách.' : 'Nhập mã nhận hàng bảo mật (pk_…) bên dưới QR trên điện thoại của khách. Mã đơn EB-… không dùng để xác minh. Quét bằng camera chưa được hỗ trợ.'}</p>
           <form onSubmit={check} noValidate>
-            <input className="ip" value={code} onChange={(e) => { setCode(e.target.value); setError(null); setFound(null); }} placeholder="ECO-XXXX" aria-label="Mã nhận hàng" autoComplete="off" autoCapitalize="characters" spellCheck={false} style={{ textAlign: 'center', fontWeight: 700, letterSpacing: '.1em' }} />
+            <input className="ip" value={code} onChange={(e) => { setCode(e.target.value); setError(null); setFound(null); }} placeholder={services.demo ? 'ECO-XXXX' : 'pk_…'} aria-label="Mã nhận hàng" autoComplete="off" autoCapitalize="none" spellCheck={false} style={{ textAlign: 'center', fontWeight: 700, letterSpacing: '.1em' }} />
             <div style={{ marginTop: 10 }}><Button type="submit" block loading={checking} disabled={!code.trim()}>Kiểm tra mã</Button></div>
           </form>
         </Card>
@@ -77,7 +77,7 @@ export default function VerifyPickupPage() {
                   <b style={{ display: 'block', fontSize: 14.5, color: 'var(--g9)' }}>Mã hợp lệ · đơn #{found.id}</b>
                   <span className="mu">{found.customer} · {found.bagName} · {found.quantity} suất · giờ nhận {windowLabel(found.pickupWindow)}</span>
                 </span>
-                <Button loading={delivering} onClick={() => void deliver()}>Giao túi cho khách</Button>
+                <Button loading={delivering} onClick={() => void deliver()}>{services.demo ? 'Giao túi cho khách' : 'Xác minh và giao túi'}</Button>
               </div>
             </section>
           )}

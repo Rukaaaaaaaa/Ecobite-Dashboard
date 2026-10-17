@@ -6,15 +6,15 @@ import { DEMO_CODE, DEMO_PASSWORD, DEMO_PHONE } from './demo/fixtures';
 import { demoStats } from './demo/stats';
 import { demoWallet } from './demo/wallet';
 import type { Services } from './types';
+import { liveServices } from './live';
 
 /**
  * The single place that decides which implementation the app uses.
  *
- * Everything is the in-memory DEMO for now: the backend has none of the restaurant-owner endpoints yet
- * (see README, "API còn thiếu"). When one exists, add its http implementation (using `http.ts`) and swap
- * ONLY that service here; do not mix demo and real data inside one screen.
+ * Live restaurant services are the default. VITE_DEMO_MODE=true explicitly selects
+ * the original isolated demo. Never mix demo and real data inside one screen.
  */
-export const services: Services = {
+export const services: Services = import.meta.env.VITE_DEMO_MODE === 'true' ? {
   demo: true,
   auth: demoAuth,
   orders: demoOrders,
@@ -22,7 +22,7 @@ export const services: Services = {
   profile: demoProfile,
   stats: demoStats,
   wallet: demoWallet,
-};
+} : liveServices;
 
 export { ApiError } from './types';
 export type * from './types';

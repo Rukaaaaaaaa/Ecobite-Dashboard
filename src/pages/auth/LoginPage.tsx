@@ -90,17 +90,17 @@ export default function LoginPage() {
         <form onSubmit={submitPassword} noValidate className="stack" style={{ gap: 14 }}>
           <PhoneField label="Số điện thoại" required value={phone} onChange={(e) => setPhone(e.target.value)} error={phoneErr} />
           <PasswordField label="Mật khẩu" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} error={pwErr} />
-          <div style={{ textAlign: 'right', marginTop: -4 }}>
+          {services.demo && <div style={{ textAlign: 'right', marginTop: -4 }}>
             <Link to="/forgot-password" style={{ fontSize: 12.5 }}>Quên mật khẩu?</Link>
-          </div>
+          </div>}
           {error}
           <Button type="submit" block loading={busy}>Đăng nhập</Button>
-          <div className="or-line" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {services.demo && <div className="or-line" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ flex: 1, height: 1, background: 'var(--ln)' }} />
             <span className="mu">hoặc</span>
             <span style={{ flex: 1, height: 1, background: 'var(--ln)' }} />
-          </div>
-          <Button type="button" variant="ghost" block onClick={() => switchMode('otp-phone')}><Icon name="msg" size={16} />Đăng nhập bằng mã OTP</Button>
+          </div>}
+          {services.demo && <Button type="button" variant="ghost" block onClick={() => switchMode('otp-phone')}><Icon name="msg" size={16} />Đăng nhập bằng mã OTP</Button>}
           {demoHints && (
             <div className="note warn">
               <b>Chế độ demo.</b> Tài khoản mẫu: <b>{formatPhone(demoHints.phone)}</b> / <b>{demoHints.password}</b>
@@ -137,6 +137,7 @@ export default function LoginPage() {
       <p style={{ textAlign: 'center', margin: '18px 0 0', fontSize: 13, color: 'var(--ink2)' }}>
         Chưa có gian hàng? <Link to="/register">Đăng ký ngay</Link>
       </p>
+      {!services.demo && <p className="mu" style={{ marginTop: 12 }}>Dùng tài khoản nhà hàng đã đăng ký hoặc tài khoản EcoBite đã được cấp quyền. Tải lại trang sẽ yêu cầu đăng nhập lại.</p>}
     </AuthLayout>
   );
 }

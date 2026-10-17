@@ -40,7 +40,7 @@ export default function OrdersListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
-  const list = useAsync(() => services.orders.list({ search: q, status, page, pageSize: 8 }), [q, status, page]);
+  const list = useAsync(() => services.orders.list({ search: q, status, page, pageSize: 8 }), [q, status, page], services.demo ? 0 : 3000);
   const d = list.data;
 
   const exportCsv = async () => {
@@ -48,7 +48,7 @@ export default function OrdersListPage() {
     try {
       const all = await services.orders.list({ search: q, status, pageSize: 5000 });
       downloadCsv(`don-hang-${businessDate()}.csv`, ['Mã đơn', 'Khách hàng', 'Túi đồ ăn', 'Số lượng', 'Tổng tiền', 'Đặt lúc', 'Giờ nhận', 'Trạng thái'],
-        all.items.map((o) => [o.id, o.customer, o.bagName, o.quantity, o.total, `${o.placedAt.slice(0, 10)} ${businessTime(o.placedAt)}`, `${o.pickupWindow.start}-${o.pickupWindow.end}`, ORDER_STATUS[o.status].label]));
+        all.items.map((o) => [o.orderCode ?? o.id, o.customer, o.bagName, o.quantity, o.total, `${o.placedAt.slice(0, 10)} ${businessTime(o.placedAt)}`, `${o.pickupWindow.start}-${o.pickupWindow.end}`, ORDER_STATUS[o.status].label]));
       toast.success(`Đã xuất ${all.items.length} đơn`);
     } catch (e) {
       toast.error(errorMessage(e));
@@ -75,7 +75,7 @@ export default function OrdersListPage() {
       <Card>
         <div className="chips" role="group" aria-label="Lọc theo trạng thái">
           <Chip active={status === 'all'} count={d?.counts.all} onClick={() => update({ status: null, page: null })}>Tất cả</Chip>
-          {ORDER_STATUS_ORDER.map((s) => (
+          {ORDER_STATUS_ORDER.filter((s) => services.demo || s !== 'miss').map((s) => (
             <Chip key={s} active={status === s} count={d?.counts[s]} onClick={() => update({ status: s, page: null })}>{ORDER_STATUS[s].label}</Chip>
           ))}
         </div>

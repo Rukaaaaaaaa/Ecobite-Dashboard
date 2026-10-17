@@ -33,6 +33,8 @@ export interface RegisterInput {
   fullName: string;
   phone: string;
   password: string;
+  restaurantName?: string;
+  address?: string;
 }
 
 /**
@@ -86,7 +88,7 @@ export interface OrdersService {
   list(query: OrderListQuery): Promise<OrderListResult>;
   get(id: string): Promise<Order>;
   /** wait → conf, conf → ready. Anything else is rejected. */
-  advance(id: string): Promise<Order>;
+  advance(id: string, expectedStatus?: string): Promise<Order>;
   /** Manual or scanned code. */
   lookupPickupCode(code: string): Promise<Order>;
   /** ready → done for an order found by `lookupPickupCode`. */

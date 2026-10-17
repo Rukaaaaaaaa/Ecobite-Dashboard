@@ -12,7 +12,7 @@ import { timeAgoMinutes } from '@/utils/format';
 /** 2.4 — orders waiting for an action from the restaurant. */
 export default function PendingOrdersPage() {
   const [scope, setScope] = useState<'pending' | 'all'>('pending');
-  const q = useAsync(() => services.orders.list({ actionableOnly: scope === 'pending', pageSize: 50 }), [scope]);
+  const q = useAsync(() => services.orders.list({ actionableOnly: scope === 'pending', pageSize: 50 }), [scope], services.demo ? 0 : 3000);
   const items = q.data?.items ?? [];
   const waiting = items.filter((o) => o.status === 'wait');
   const oldest = waiting.length ? Math.max(...waiting.map((o) => timeAgoMinutes(o.placedAt))) : 0;

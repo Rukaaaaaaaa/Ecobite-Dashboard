@@ -23,7 +23,11 @@ export function AuthLayout({ step = 0, head, children }: { step?: number; head?:
         <div>
           <h2>{head ?? 'Bán hết phần đồ ăn còn tốt trước giờ đóng cửa'}</h2>
           <ol className="stl">
-            {STEPS.map((s, i) => (
+            {(services.demo ? STEPS : [
+              ['Đăng ký hoặc đăng nhập', 'Số điện thoại và mật khẩu của quán'],
+              ['Nhận đơn từ khách hàng', 'Đơn hàng tự cập nhật từ ứng dụng'],
+              ['Soạn túi và xác minh nhận hàng', 'Khách xác nhận hoàn tất trên ứng dụng'],
+            ]).map((s, i) => (
               <li key={s[0]} className={i === step ? 'on' : ''}>
                 <span className="n">{i < step ? <Icon name="chk" size={12} /> : i + 1}</span>
                 <span>

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { services } from '@/services';
 import type { Account } from '@/types';
@@ -15,6 +15,11 @@ const AuthContext = createContext<AuthValue | null>(null);
 /** The session lives in memory only: a reload signs the user out (no token or password is written to storage). */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account | null>(() => services.auth.getSession());
+  useEffect(() => {
+    const expire = () => { void services.auth.logout(); setAccount(null); };
+    window.addEventListener('ecobite:session-expired', expire);
+    return () => window.removeEventListener('ecobite:session-expired', expire);
+  }, []);
   const logout = useCallback(async () => {
     await services.auth.logout();
     setAccount(null);
@@ -58,4 +63,4 @@ export function RedirectIfAuthed({ children, afterAuth }: { children: ReactNode;
 }
 
 /** Next verification step a new account still owes, or null. */
-export const nextVerificationStep = (a: Account): '/verify-phone' | null => (!a.phoneVerified ? '/verify-phone' : null);
+export const nextVerificationStep = (a: Account): '/verify-phone' | null => (services.demo && !a.phoneVerified ? '/verify-phone' : null);

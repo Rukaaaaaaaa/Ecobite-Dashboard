@@ -3,14 +3,11 @@
  *
  * Order statuses follow the reference design. The real backend lifecycle is
  * placed → paid → preparing → ready → qr_verified → picked_up (+ cancelled / expired).
- * The mapping below is a PROPOSAL waiting for backend confirmation, nothing is wired to it yet:
- *   wait   ≈ paid           (customer paid, restaurant has not acted)
- *   conf   ≈ preparing
- *   ready  ≈ ready
- *   done   ≈ qr_verified / picked_up
- *   cancel ≈ cancelled      miss ≈ no backend equivalent yet
+ * Live mapping (services/live.ts): unpaid = placed, wait = paid (also confirmed cash),
+ * conf = preparing, ready = ready, verified = qr_verified, done = picked_up,
+ * cancel = cancelled, expired = expired. "miss" exists only in the original demo.
  */
-export type OrderStatus = 'wait' | 'conf' | 'ready' | 'done' | 'miss' | 'cancel';
+export type OrderStatus = 'unpaid' | 'wait' | 'conf' | 'ready' | 'verified' | 'done' | 'miss' | 'cancel' | 'expired';
 
 export interface TimeWindow {
   start: string; // 'HH:mm'
@@ -18,6 +15,12 @@ export interface TimeWindow {
 }
 
 export interface Order {
+  orderCode?: string;
+  backendStatus?: string;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  items?: { foodBagId: string; name: string; quantity: number; unitPrice: number; ownBox: boolean }[];
+  money?: { subtotal: number; promoDiscount: number; ownBoxDiscount: number; total: number };
   id: string; // 'EB001245'
   /** Code the customer shows at pickup (manual entry in "Xác minh mã nhận hàng"). */
   pickupCode: string;

@@ -1,7 +1,7 @@
 import { ApiError } from './types';
 
 /**
- * Central HTTP client for the future real backend. NOT used by any screen yet (every service is demo).
+ * Central HTTP client for the live EcoBite backend.
  * - Base URL comes from `VITE_API_URL` (public value, never put secrets in VITE_* variables).
  * - The access token is held in memory only, never in localStorage.
  */
@@ -28,6 +28,10 @@ export async function http<T>(path: string, init: { method?: string; body?: unkn
     throw new ApiError('network', 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.');
   }
   if (!res.ok) {
+    if (res.status === 401 && accessToken) {
+      setAccessToken(null);
+      window.dispatchEvent(new Event('ecobite:session-expired'));
+    }
     const data = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
     throw new ApiError(data?.code ?? `http_${res.status}`, data?.message ?? 'Có lỗi xảy ra. Thử lại sau.');
   }

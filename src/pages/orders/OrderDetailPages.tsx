@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { OrderStatusBadge } from '@/components/Badge';
+import { ORDER_STATUS, OrderStatusBadge } from '@/components/Badge';
 import { Button, LinkButton } from '@/components/Button';
 import { Card, Note } from '@/components/Controls';
 import { useToast } from '@/components/Feedback';
@@ -24,14 +24,14 @@ const stamp = (iso: string | null) => (iso ? `${businessTime(iso)} · ${shortDat
 
 function useOrder() {
   const { id = '' } = useParams();
-  return { id, ...useAsync(() => services.orders.get(id), [id]) };
+  return { id, ...useAsync(() => services.orders.get(id), [id], services.demo ? 0 : 3000) };
 }
 
 /** 3.2 */
 export function OrderDetailPage() {
   const { id, data: o, error, reload } = useOrder();
   return (
-    <Page title={`Đơn #${id}`} sub={o ? `${o.customer} · đặt lúc ${stamp(o.placedAt)}` : undefined} actions={<LinkButton variant="ghost" to="/orders"><Icon name="back" size={16} />Về danh sách</LinkButton>}>
+    <Page title={`Đơn #${o?.orderCode ?? id}`} sub={o ? `${o.customer} · đặt lúc ${stamp(o.placedAt)}` : undefined} actions={<LinkButton variant="ghost" to="/orders"><Icon name="back" size={16} />Về danh sách</LinkButton>}>
       {error ? <ErrorState message={error} onRetry={reload} /> : !o ? <Loading /> : <Detail o={o} />}
     </Page>
   );
@@ -49,27 +49,29 @@ function Detail({ o }: { o: Order }) {
     <>
       <div className="row">
         <Card title="Nội dung đơn" action={<OrderStatusBadge status={o.status} />} grow="999 1 400px">
+          {o.items && <div className="stack" style={{ marginBottom: 14 }}>{o.items.map((item, index) => <Row key={`${item.foodBagId}-${index}`} k={`${item.quantity} × ${item.name}`}><span>{vnd(item.unitPrice)} / suất{item.ownBox ? ' · khách mang hộp' : ''}</span></Row>)}</div>}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', paddingBottom: 13, borderBottom: '1px solid var(--ln)' }}>
             <img className="thb" src={o.image} alt="" width={64} height={54} />
             <span style={{ flex: 1, minWidth: 0 }}>
               <b style={{ display: 'block', fontSize: 14 }}>{o.bagName}</b>
-              <span className="mu">{PRODUCT_KIND_LABEL[o.productKind]} · {o.quantity} suất · {vnd(o.unitPrice)}/suất</span>
+              <span className="mu">{PRODUCT_KIND_LABEL[o.productKind]} · {o.quantity} suất{o.items && o.items.length > 1 ? '' : ` · ${vnd(o.unitPrice)}/suất`}</span>
             </span>
             <b className="num">{vnd(o.total)}</b>
           </div>
           <div className="flex-between" style={{ paddingTop: 13, alignItems: 'baseline' }}>
-            <b style={{ fontSize: 13.5 }}>Khách đã thanh toán</b>
+            <b style={{ fontSize: 13.5 }}>{o.paymentMethod === 'cash' ? (o.paymentStatus === 'success' ? 'Tiền mặt · đã thu' : 'Tiền mặt · cần thu tại quán') : o.paymentStatus && o.paymentStatus !== 'success' ? 'Chờ thanh toán' : 'Khách đã thanh toán'}</b>
             <b className="num" style={{ fontSize: 19, color: 'var(--g7)' }}>{vnd(o.total)}</b>
           </div>
-          <div style={{ marginTop: 12 }}><Note>Thanh toán qua ứng dụng EcoBite. Tiền về tài khoản quán theo kỳ đối soát.</Note></div>
+          {o.money && <div style={{ marginTop: 12 }}><Row k="Tiền sản phẩm">{vnd(o.money.subtotal)}</Row><Row k="Giảm mã ưu đãi">−{vnd(o.money.promoDiscount)}</Row><Row k="Mang hộp riêng">−{vnd(o.money.ownBoxDiscount)}</Row></div>}
+          <div style={{ marginTop: 12 }}><Note>{services.demo ? 'Thanh toán qua ứng dụng EcoBite. Tiền về tài khoản quán theo kỳ đối soát.' : o.paymentMethod === 'cash' ? 'Thu tiền mặt khi giao túi. Khách xác nhận nhận đủ túi trên ứng dụng để hoàn tất đơn.' : 'Trạng thái thanh toán được cập nhật từ máy chủ EcoBite.'}</Note></div>
         </Card>
         <Card title="Khách hàng" grow="1 1 280px">
           <Row k="Họ tên">{o.customer}</Row>
           <Row k="Số điện thoại"><span className="num">{o.phoneMasked}</span></Row>
           <Row k="Giờ nhận"><span className="num">{windowLabel(o.pickupWindow)}</span></Row>
-          <Row k="Mã nhận hàng"><span className="num">{o.status === 'done' ? o.pickupCode : 'ECO-••••'}</span></Row>
-          <Row k="Số đơn đã mua"><span className="num">{o.customerOrderCount} đơn</span></Row>
-          <div style={{ marginTop: 12 }}><Note tone="ok">Số điện thoại được che bớt và mã nhận hàng chỉ hiện sau khi giao, để bảo vệ thông tin khách. Khách sẽ đưa mã khi tới lấy.</Note></div>
+          <Row k="Mã nhận hàng"><span className="num">{services.demo ? (o.status === 'done' ? o.pickupCode : 'ECO-••••') : 'Khách cung cấp khi nhận túi'}</span></Row>
+          {services.demo && <Row k="Số đơn đã mua"><span className="num">{o.customerOrderCount} đơn</span></Row>}
+          <div style={{ marginTop: 12 }}><Note tone="ok">Số điện thoại được che bớt. Khách đưa mã nhận hàng bảo mật trên ứng dụng khi tới lấy.</Note></div>
         </Card>
       </div>
       <Card title="Tiến trình">
@@ -105,7 +107,7 @@ export function OrderProcessPage() {
   const advance = async () => {
     setBusy(true);
     try {
-      const next = await services.orders.advance(id);
+      const next = await services.orders.advance(id, o?.backendStatus);
       setData(next);
       toast.success(next.status === 'conf' ? 'Đã xác nhận đơn. Khách được báo.' : 'Đã soạn xong. Chờ khách tới lấy.');
     } catch (e) {
@@ -146,10 +148,10 @@ export function OrderProcessPage() {
               </div>
             </div>
             <div style={{ marginTop: 13 }}>
-              <Note tone="warn">Đơn này khách đã trả tiền. Quy tắc cho phép quán từ chối hay không, và hoàn tiền thế nào, chưa được chốt nên tạm khoá.</Note>
+              <Note tone="warn">Quán chưa thể từ chối đơn trên hệ thống. Kiểm tra hình thức thanh toán trước khi giao túi.</Note>
             </div>
             {!options.some((x) => x.enabled) && (
-              <div style={{ marginTop: 10 }}><Note>Đơn ở trạng thái “{o.status === 'done' ? 'Hoàn thành' : o.status === 'cancel' ? 'Khách đã huỷ' : 'Khách không lấy'}” không còn thao tác nào. <Link to={`/orders/${o.id}`}>Xem chi tiết đơn</Link></Note></div>
+              <div style={{ marginTop: 10 }}><Note>{o.status === 'verified' ? 'Đã xác minh mã. Chờ khách xác nhận đã nhận đủ túi trên ứng dụng.' : `Đơn ở trạng thái “${ORDER_STATUS[o.status].label}” không có thao tác từ quán.`} <Link to={`/orders/${o.id}`}>Xem chi tiết đơn</Link></Note></div>
             )}
           </Card>
           <Card title="Thông tin đơn" grow="1 1 270px">
@@ -161,7 +163,7 @@ export function OrderProcessPage() {
               <Row k="Khách">{o.customer}</Row>
               <Row k="Giờ nhận"><span className="num">{windowLabel(o.pickupWindow)}</span></Row>
               <Row k="Đặt lúc"><span className="num">{businessTime(o.placedAt)}</span></Row>
-              <Row k="Thanh toán">Đã trả qua ứng dụng</Row>
+              <Row k="Thanh toán">{o.paymentMethod === 'cash' ? 'Tiền mặt tại quán' : o.paymentStatus && o.paymentStatus !== 'success' ? 'Chưa thanh toán' : 'Đã trả qua ứng dụng'}</Row>
             </div>
           </Card>
         </div>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -10,6 +10,7 @@ import { useAccount, useAuth } from '@/features/auth/AuthContext';
 import { errorMessage } from '@/hooks/useAsync';
 import { Page } from '@/layouts/DashboardLayout';
 import { services } from '@/services';
+import { http } from '@/services/http';
 import { formatPhone } from '@/utils/format';
 import { passwordError } from '@/utils/validation';
 
@@ -41,11 +42,31 @@ export default function SettingsPage() {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [changingPw, setChangingPw] = useState(false);
   const [togglingOtp, setTogglingOtp] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(!services.demo);
+  const [prefsError, setPrefsError] = useState<string>();
+  useEffect(() => {
+    if (services.demo) return;
+    let active = true;
+    setSavingPrefs(true);
+    void http<Prefs>('/merchant/manage/preferences').then((data) => {
+      if (active) { setPrefs(data); setPrefsError(undefined); }
+    }).catch((err: unknown) => { if (active) setPrefsError(errorMessage(err)); })
+      .finally(() => { if (active) setSavingPrefs(false); });
+    return () => { active = false; };
+  }, [account.id]);
 
-  const setPref = (k: keyof Prefs, v: boolean) => {
+  const setPref = async (k: keyof Prefs, v: boolean) => {
+    if (savingPrefs) return;
     const next = { ...prefs, [k]: v };
-    setPrefs(next);
-    try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* storage unavailable: keep the in-memory value */ }
+    if (services.demo) {
+      setPrefs(next);
+      try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return;
+    }
+    setSavingPrefs(true);
+    try { setPrefs(await http<Prefs>('/merchant/manage/preferences', { method: 'POST', body: next })); setPrefsError(undefined); }
+    catch (err) { setPrefsError(errorMessage(err)); }
+    finally { setSavingPrefs(false); }
   };
 
   const toggleOtp = async () => {
@@ -72,18 +93,19 @@ export default function SettingsPage() {
       <div className="row">
         <Card title="Đăng nhập và bảo mật" grow="999 1 380px">
           <SettingRow title="Số điện thoại đăng nhập" value={<>{formatPhone(account.phone)} <Badge tone={account.phoneVerified ? 'g' : 'a'} small>{account.phoneVerified ? 'Đã xác thực' : 'Chưa xác thực'}</Badge></>}
-            action={<Link className={`bt sm ${account.phoneVerified ? 'gh' : ''}`} to="/verify-phone?returnTo=%2Fsettings">{account.phoneVerified ? 'Đổi số' : 'Xác thực'}</Link>} />
+            action={services.demo ? <Link className={`bt sm ${account.phoneVerified ? 'gh' : ''}`} to="/verify-phone?returnTo=%2Fsettings">{account.phoneVerified ? 'Đổi số' : 'Xác thực'}</Link> : <span className="mu">Chưa hỗ trợ SMS</span>} />
           <SettingRow title="Mật khẩu" value="Đổi mật khẩu định kỳ để an toàn hơn" action={<Button small variant="ghost" onClick={() => setChangingPw(true)}>Đổi mật khẩu</Button>} />
           <SettingRow title="Đăng nhập bằng mã OTP" value={account.otpLogin ? 'Đang bật' : 'Đang tắt'}
-            action={<Button small variant="ghost" loading={togglingOtp} onClick={() => void toggleOtp()}>{account.otpLogin ? 'Tắt' : 'Bật'}</Button>} />
+            action={<Button small variant="ghost" disabled={!services.demo} title={!services.demo ? 'Chưa cấu hình dịch vụ SMS' : undefined} loading={togglingOtp} onClick={() => void toggleOtp()}>{account.otpLogin ? 'Tắt' : 'Bật'}</Button>} />
           <h3 className="ttl" style={{ margin: '16px 0 4px' }}>Thông báo</h3>
           {PREFS.map(([k, label]) => (
             <div key={k} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--ln)' }}>
               <span style={{ flex: 1, fontSize: 12.5 }}>{label}</span>
-              <Toggle checked={prefs[k]} label={label} onChange={(v) => setPref(k, v)} />
+              <Toggle checked={prefs[k]} label={label} disabled={savingPrefs} onChange={(v) => void setPref(k, v)} />
             </div>
           ))}
-          <p className="mu" style={{ marginTop: 8 }}>Lựa chọn được lưu trên trình duyệt này. Thông báo đẩy chưa được kết nối, nên hiện chưa có thông báo nào được gửi.</p>
+          {prefsError && <p role="alert" className="mu">{prefsError}</p>}
+          <p className="mu" style={{ marginTop: 8 }}>{services.demo ? 'Lựa chọn được lưu trên trình duyệt này.' : 'Lựa chọn được lưu vào tài khoản trên máy chủ.'} Thông báo đẩy chưa được kết nối, nên hiện chưa có thông báo nào được gửi.</p>
         </Card>
         <div style={{ flex: '1 1 280px', minWidth: 0 }} className="stack">
           <Card title="Người dùng của quán" action={<Button small variant="ghost" disabled title="Chưa hỗ trợ nhân viên"><Icon name="plus" size={13} />Thêm</Button>}>
@@ -149,7 +171,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         <PasswordField label="Mật khẩu hiện tại" required autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} error={touched && !cur ? 'Nhập mật khẩu hiện tại' : serverError ?? undefined} />
         <PasswordField label="Mật khẩu mới" required autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} error={nextErr} />
         <PasswordField label="Nhập lại mật khẩu mới" required autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={confirmErr} />
-        <Note>Ở chế độ demo, mật khẩu chỉ đổi trong bộ nhớ trình duyệt.</Note>
+        <Note>{services.demo ? 'Ở chế độ demo, mật khẩu chỉ đổi trong bộ nhớ trình duyệt.' : 'Mật khẩu mới được lưu bảo mật trên máy chủ và dùng cho lần đăng nhập sau.'}</Note>
         <div style={{ display: 'flex', gap: 9, justifyContent: 'flex-end' }}>
           <Button variant="ghost" onClick={onClose}>Huỷ</Button>
           <Button type="submit" loading={busy}>Đổi mật khẩu</Button>

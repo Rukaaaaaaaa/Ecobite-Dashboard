@@ -21,7 +21,7 @@ export function OrdersTable({ orders, variant, onChanged }: { orders: Order[]; v
     setBusyId(o.id);
     const wasWaiting = o.status === 'wait';
     try {
-      await services.orders.advance(o.id);
+      await services.orders.advance(o.id, o.backendStatus);
       toast.success(wasWaiting ? `Đã xác nhận đơn #${o.id}` : `Đơn #${o.id} đã soạn xong, chờ khách tới lấy`);
       onChanged?.();
     } catch (e) {
@@ -57,7 +57,7 @@ export function OrdersTable({ orders, variant, onChanged }: { orders: Order[]; v
           {orders.map((o) => (
             <tr key={o.id}>
               {variant === 'history' && <td className="num">{o.placedAt.slice(8, 10)}/{o.placedAt.slice(5, 7)}</td>}
-              <td className="num">#{o.id}</td>
+              <td className="num">#{o.orderCode ?? o.id}{o.paymentMethod && <div className="mu">{o.paymentMethod === 'cash' ? (o.paymentStatus === 'success' ? 'Tiền mặt · đã thu' : 'Tiền mặt · thu tại quán') : (o.paymentStatus === 'success' ? 'Chuyển khoản · đã trả' : 'Chuyển khoản · chưa trả')}</div>}</td>
               <td>{o.customer}</td>
               {variant === 'recent' ? <td className="num">{o.quantity}</td> : <><td>{bagCell(o)}</td><td className="num">{o.quantity}</td></>}
               <td className="num">{variant === 'recent' ? vnd(o.total) : <b>{vnd(o.total)}</b>}</td>

@@ -5,6 +5,7 @@ import { Loading } from '@/components/States';
 import { AuthProvider, nextVerificationStep, RedirectIfAuthed, RequireAuth } from '@/features/auth/AuthContext';
 import type { Account } from '@/types';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { services } from '@/services';
 
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
@@ -73,7 +74,7 @@ export function App() {
               <Route path="/forgot-password" element={guest(<ForgotPasswordPage />)} />
               <Route path="/reset-password" element={<Navigate to="/forgot-password" replace />} />
               <Route path="/verify-email" element={<Navigate to="/" replace />} />
-              <Route path="/verify-phone" element={authed(<VerifyPhonePage />)} />
+              <Route path="/verify-phone" element={services.demo ? authed(<VerifyPhonePage />) : <Navigate to="/" replace />} />
 
               <Route element={authed(<DashboardLayout />)}>
                 <Route index element={<OverviewPage />} />

@@ -132,7 +132,7 @@ export default function WithdrawPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--ink3)' }}><span>Bạn nhận 90%</span><span>EcoBite giữ {PLATFORM_FEE_LABEL}</span></div>
           <div className="rowline" style={{ marginTop: 8, borderTop: '1px solid var(--ln)', alignItems: 'center' }}><span className="mu">Thời gian xử lý</span><span><RulePending /></span></div>
           <Button block loading={busy} onClick={() => void next()} style={{ marginTop: 4, height: 42 }}>Tiếp tục</Button>
-          <p className="mu" style={{ margin: '9px 0 0', fontSize: 11.5, textAlign: 'center' }}>Bước sau cần mã xác thực gửi về số điện thoại của chủ quán.</p>
+          <p className="mu" style={{ margin: '9px 0 0', fontSize: 11.5, textAlign: 'center' }}>{services.demo ? 'Bước sau cần mã xác thực gửi về số điện thoại của chủ quán.' : 'Bước sau cần mật khẩu tài khoản. Yêu cầu chờ quản trị xử lý; chưa có chuyển khoản tự động. Ví chỉ ghi nhận thanh toán chuyển khoản, không bao gồm tiền mặt đã thu tại quán.'}</p>
         </Card>
       </div>
     </Page>

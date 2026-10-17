@@ -24,10 +24,14 @@ const RANGES: { value: StatsRange; label: string }[] = [
 const RANGE_TEXT: Record<StatsRange, string> = { today: 'hôm qua', '7d': '7 ngày trước', '30d': '30 ngày trước' };
 
 export default function OverviewPage() {
+  return <DashboardOverviewPage />;
+}
+
+function DashboardOverviewPage() {
   const account = useAccount();
   const [range, setRange] = useState<StatsRange>('today');
-  const stats = useAsync(() => services.stats.overview(range), [range]);
-  const orders = useAsync(() => services.orders.list({ page: 1, pageSize: 5 }), []);
+  const stats = useAsync(() => services.stats.overview(range), [range], services.demo ? undefined : 3000);
+  const orders = useAsync(() => services.orders.list({ page: 1, pageSize: 5 }), [], services.demo ? undefined : 3000);
   const bags = useAsync(() => services.bags.list(), []);
   const profile = useAsync(() => services.profile.get(), []);
   const wallet = useAsync(() => services.wallet.summary(), []);
@@ -95,7 +99,7 @@ export default function OverviewPage() {
             ) : orders.data.items.length === 0 ? (
               <EmptyState icon="doc" title="Chưa có đơn hàng">Đơn của khách sẽ hiện ở đây ngay khi có người đặt sản phẩm của bạn.</EmptyState>
             ) : (
-              <OrdersTable orders={orders.data.items} variant="recent" />
+              <OrdersTable orders={orders.data.items} variant="recent" onChanged={orders.reload} />
             )}
           </Card>
         </div>
@@ -164,7 +168,7 @@ export default function OverviewPage() {
                 </span>
                 <span style={{ display: 'flex', gap: 9, alignItems: 'center' }}>
                   <span style={{ color: 'var(--g7)' }}><Icon name="leaf" size={18} /></span>
-                  <span><b className="num" style={{ display: 'block', fontSize: 20, color: 'var(--g9)', lineHeight: 1.1 }}>{s.rescuedKg.toLocaleString('vi-VN')} kg</b><span className="mu">Thực phẩm tránh lãng phí</span></span>
+                  <span><b className="num" style={{ display: 'block', fontSize: 20, color: 'var(--g9)', lineHeight: 1.1 }}>{services.demo ? `${s.rescuedKg.toLocaleString('vi-VN')} kg` : 'Chưa đo'}</b><span className="mu">Thực phẩm tránh lãng phí</span></span>
                 </span>
               </div>
               <div style={{ marginTop: 12, background: 'var(--g1)', borderRadius: 10, padding: '11px 13px', display: 'flex', gap: 10, alignItems: 'center' }}>

@@ -29,7 +29,7 @@ export const demoOrders: OrdersService = {
       if (search && !norm(`${o.id} ${o.customer} ${o.bagName} ${o.pickupCode}`).includes(search)) return false;
       return true;
     });
-    const counts = { all: inScope.length, wait: 0, conf: 0, ready: 0, done: 0, miss: 0, cancel: 0 } as Record<OrderStatus | 'all', number>;
+    const counts = { all: inScope.length, unpaid: 0, verified: 0, expired: 0, wait: 0, conf: 0, ready: 0, done: 0, miss: 0, cancel: 0 } as Record<OrderStatus | 'all', number>;
     for (const o of inScope) counts[o.status]++;
     const filtered = q.status && q.status !== 'all' ? inScope.filter((o) => o.status === q.status) : inScope;
     const pageSize = q.pageSize ?? 8;
